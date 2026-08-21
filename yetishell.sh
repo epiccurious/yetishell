@@ -7,14 +7,14 @@ set -o nounset
 
 check_internet_status()
 {
-  log_info 'Checking for internet.'
+  echo 'Checking for internet.'
   ( (check_internet_to_address 1.1.1.1 ||
     check_internet_to_address 1.1.0.0 ||
     check_internet_to_address 9.9.9.9 ||
     check_internet_to_address 9.9.9.11) &&
     check_internet_to_address bitcoincore.org) ||
     throw_error 'Internet checks failed.'
-  log_info 'Internet checks passed.'
+  echo 'Internet checks passed.'
 }
 
 check_internet_to_address()
