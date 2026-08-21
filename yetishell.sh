@@ -13,7 +13,7 @@ bitcoin_tarball_download()
   wget "${BITCOIN_TARBALL_FILE_SOURCE}" -O "${BITCOIN_TARBALL_TEMPORARY_PATH}" 
 }
 
-bitcoin_tarball_download_validate()
+bitcoin_tarball_download_and_validate()
 {
   BITCOIN_SOURCE="https://bitcoincore.org/bin/bitcoin-core-${TARGET_BITCOIN_VERSION}"
   BITCOIN_TARBALL_FILE_SOURCE="${BITCOIN_SOURCE}/${BITCOIN_TARBALL_FILENAME}"
@@ -21,7 +21,6 @@ bitcoin_tarball_download_validate()
   BITCOIN_HASH_FILE_SOURCE="${BITCOIN_SOURCE}/${BITCOIN_HASH_FILENAME}"
   GPG_SIGNATURES_FILENAME='SHA256SUMS.asc'
   GPG_SIGNATURES_FILE_SOURCE="${BITCOIN_SOURCE}/${GPG_SIGNATURES_FILENAME}"
-  GPG_GOOD_SIGNATURES_REQUIRED='7'
   GUIX_SIGS_REPO='https://github.com/bitcoin-core/guix.sigs'
   BITCOIN_TARBALL_TEMPORARY_PATH="${TEMP_DIRECTORY}/${BITCOIN_TARBALL_FILENAME}"
   BITCOIN_HASH_FILE="${TEMP_DIRECTORY}/${BITCOIN_HASH_FILENAME}"
@@ -30,9 +29,15 @@ bitcoin_tarball_download_validate()
   GUIX_SIGS_DESTINATION_DIRECTORY="${HOME}/Downloads/guix.sigs"
 
   bitcoin_tarball_download
-  bitcoin_tarball_validate
+  bitcoin_tarball_validate_checksum
+  bitcoin_tarball_validate_signatures
+  
+  # move the tarball to the user's Downloads directory only after
+  # validating the sha256 hash and GPG signatures
+  move_tarball_and_guix_sigs_from_temp_directory_to_downloads
+  [ -f "${BITCOIN_HASH_FILE}" ] && rm "${BITCOIN_HASH_FILE}"
+  [ -f "${GPG_SIGNATURES_FILE}" ] && rm "${GPG_SIGNATURES_FILE}"
 }
-
 
 bitcoin_tarball_download_extract_test_install()
 {
@@ -51,7 +56,7 @@ bitcoin_tarball_download_extract_test_install()
   BITCOIN_TARBALL_FILENAME="bitcoin-${TARGET_BITCOIN_VERSION}-${TARGET_ARCHITECTURE}-${TARGET_BITCOIN_TARBALL_OS}.tar.gz"
   BITCOIN_TARBALL_DESTINATION_PATH="${HOME}/Downloads/${BITCOIN_TARBALL_FILENAME}"
 
-  [ -f "${BITCOIN_TARBALL_DESTINATION_PATH}" ] || bitcoin_tarball_download_validate
+  [ -f "${BITCOIN_TARBALL_DESTINATION_PATH}" ] || bitcoin_tarball_download_and_validate
   bitcoin_tarball_extract
   bitcoin_tarball_test
   bitcoin_tarball_install
@@ -133,14 +138,7 @@ bitcoin_tarball_install()
 bitcoin_tarball_test()
 {
   echo 'Running the unit tests.'
-  # only sign test_bitcoin if on arm64 and target version is before 28.2
-  if [ "${TARGET_ARCHITECTURE}" = 'arm64' ] &&
-    ! is_arm64_test_bitcoin_signed "${TARGET_BITCOIN_VERSION}"; then
-    codesign -s - "${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin
-  fi
-  UNIT_TEST_RESPONSE="$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)"
-  readonly UNIT_TEST_RESPONSE
-  case "${UNIT_TEST_RESPONSE}" in
+  case "$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)" in
     *'No errors detected'*) ;;
     *)
       printf '\n%s\n' "${UNIT_TEST_RESPONSE}"
@@ -149,28 +147,14 @@ bitcoin_tarball_test()
   esac
 }
 
-bitcoin_tarball_validate()
+bitcoin_tarball_validate_signatures()
 {
-  bitcoin_tarball_validate_checksum
-
+  GPG_GOOD_SIGNATURES_REQUIRED='7'
   GPG_GOOD_SIGNATURE_COUNT="$(bitcoin_tarball_validate_count_signatures)"
-  readonly GPG_GOOD_SIGNATURE_COUNT
   if [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ]; then
     throw_error "INVALID SIGNATURES. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${GPG_SIGNATURES_FILE}."
   fi
   echo "Found ${GPG_GOOD_SIGNATURE_COUNT} good signatures."
-
-  [ -d "$(dirname "${BITCOIN_TARBALL_DESTINATION_PATH}")" ] ||
-    mkdir -p "$(dirname "${BITCOIN_TARBALL_DESTINATION_PATH}")"
-  mv "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_DESTINATION_PATH}"
-
-  if [ ! -d "${GUIX_SIGS_DESTINATION_DIRECTORY}/" ]; then
-    mkdir -p "${GUIX_SIGS_DESTINATION_DIRECTORY}"
-    mv "${GUIX_SIGS_TEMPORARY_DIRECTORY}" "${GUIX_SIGS_DESTINATION_DIRECTORY}"
-  fi
-
-  [ -f "${BITCOIN_HASH_FILE}" ] && rm "${BITCOIN_HASH_FILE}"
-  [ -f "${GPG_SIGNATURES_FILE}" ] && rm "${GPG_SIGNATURES_FILE}"
 }
 
 bitcoin_tarball_validate_checksum()
@@ -201,6 +185,17 @@ bitcoin_tarball_validate_count_signatures()
   pgrep '^keyboxd$' > /dev/null && gpgconf --kill keyboxd
   printf '%s\n' "${SIGNATURE_COUNT}"
 }
+
+move_tarball_and_guix_sigs_from_temp_directory_to_downloads() {
+  [ -d "$(dirname "${BITCOIN_TARBALL_DESTINATION_PATH}")" ] ||
+    mkdir -p "$(dirname "${BITCOIN_TARBALL_DESTINATION_PATH}")"
+  mv "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_DESTINATION_PATH}"
+
+  [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}/" ] ||
+    mkdir -p "${GUIX_SIGS_DESTINATION_DIRECTORY}"
+  mv "${GUIX_SIGS_TEMPORARY_DIRECTORY}" "${GUIX_SIGS_DESTINATION_DIRECTORY}"
+}
+
 
 throw_error() {
   [ -n "$1" ] &&
