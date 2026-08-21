@@ -5,6 +5,28 @@
 set -o errexit
 set -o nounset
 
+check_internet_status()
+{
+  ensure_curl_dependency
+  log_info 'Checking for internet.'
+  ( (check_internet_to_address 1.1.1.1 ||
+    check_internet_to_address 1.1.0.0 ||
+    check_internet_to_address 9.9.9.9 ||
+    check_internet_to_address 9.9.9.11) &&
+    check_internet_to_address bitcoincore.org) ||
+    throw_error 'Internet checks failed.'
+  log_info 'Internet checks passed.'
+}
+
+check_internet_to_address()
+{
+  check_internet_address="$1"
+  CHECK_INTERNET_PORT='443'
+  CHECK_INTERNET_TIMEOUT_SECONDS='10'
+  curl --silent --output /dev/null --retry 5 --connect-timeout "${CHECK_INTERNET_TIMEOUT_SECONDS}" \
+    "https://${check_internet_address}:${CHECK_INTERNET_PORT}" > /dev/null
+}
+
 bitcoin_tarball_download()
 {
   echo 'Downloading Bitcoin Core.'
@@ -206,7 +228,7 @@ throw_error() {
 install_runtime_dependencies() {
   sudo apt-get -qq update
   sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --assume-yes --no-install-recommends \
-    git gnupg libxcb-xinerama0 \
+    curl git gnupg libxcb-xinerama0 \
     > /dev/null 2>&1
 }
 
@@ -233,6 +255,7 @@ if [ "${os_release_id}" != "${TARGET_OS_RELEASE_ID}" ] ||
   throw_error "Must be running Ubuntu ${TARGET_OS_VERSION_ID}"
 fi
 
+check_internet_status
 install_system_updates
 install_runtime_dependencies
 bitcoin_tarball_download_extract_test_install
