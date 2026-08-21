@@ -55,7 +55,6 @@ bitcoin_tarball_download_and_validate()
   bitcoin_tarball_download
   bitcoin_tarball_validate_checksum
   bitcoin_tarball_validate_signatures
-  
   # move the tarball to the user's Downloads directory only after
   # validating the sha256 hash and GPG signatures
   move_tarball_and_guix_sigs_from_temp_directory_to_downloads
@@ -66,12 +65,6 @@ bitcoin_tarball_download_and_validate()
 bitcoin_tarball_download_extract_test_install()
 {
   BITCOIN_CORE_EXTRACT_DIR="${TEMP_DIRECTORY}/bitcoin-core"
-  BITCOIN_INSTALL_BIN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/bin"
-  BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
-  BITCOIN_INSTALL_MAN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/share/man/man1"
-  BITCOIN_INSTALL_DESTINATION='/usr/local'
-  BITCOIN_INSTALL_BIN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/bin"
-  BITCOIN_INSTALL_MAN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/share/man/man1"
   BITCOIN_TARBALL_FILENAME="bitcoin-${TARGET_BITCOIN_VERSION}-${TARGET_ARCHITECTURE}-${TARGET_BITCOIN_TARBALL_OS}.tar.gz"
   BITCOIN_TARBALL_DESTINATION_PATH="${HOME}/Downloads/${BITCOIN_TARBALL_FILENAME}"
 
@@ -95,14 +88,20 @@ bitcoin_tarball_extract()
 
 bitcoin_tarball_install()
 {
+  BITCOIN_INSTALL_BIN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/bin"
+  BITCOIN_INSTALL_MAN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/share/man/man1"
+  BITCOIN_INSTALL_DESTINATION='/usr/local'
+  BITCOIN_INSTALL_BIN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/bin"
+  BITCOIN_INSTALL_MAN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/share/man/man1"
+
   echo "Installing Bitcoin Core ${TARGET_BITCOIN_VERSION}."
 
   # install the binaries
   [ -d "${BITCOIN_INSTALL_BIN_DESTINATION}" ] ||
     mkdir -p "${BITCOIN_INSTALL_BIN_DESTINATION}" 2> /dev/null ||
-    sudo mkdir "${BITCOIN_INSTALL_BIN_DESTINATION}" ||
+    sudo mkdir -p "${BITCOIN_INSTALL_BIN_DESTINATION}" ||
     throw_error "Unable to create directory ${BITCOIN_INSTALL_BIN_DESTINATION}."
-  for bitcoin_executable in bitcoind bitcoin-qt bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet; do
+  for bitcoin_executable in bitcoind bitcoin-qt bitcoin-cli; do
     sudo install -c \
       "${BITCOIN_INSTALL_BIN_SOURCE}/${bitcoin_executable}" \
       "${BITCOIN_INSTALL_BIN_DESTINATION}/"
@@ -113,13 +112,14 @@ bitcoin_tarball_install()
     mkdir -p "${BITCOIN_INSTALL_MAN_DESTINATION}" 2> /dev/null ||
     sudo mkdir -p "${BITCOIN_INSTALL_MAN_DESTINATION}" ||
     throw_error "Unable to create directory ${BITCOIN_INSTALL_MAN_DESTINATION}."
-  for man_page in bitcoind.1 bitcoin-qt.1 bitcoin-cli.1 bitcoin-tx.1 bitcoin-util.1 bitcoin-wallet.1; do
+  for man_page in bitcoind.1 bitcoin-qt.1 bitcoin-cli.1; do
     sudo install -c -m 644 "${BITCOIN_INSTALL_MAN_SOURCE}/${man_page}" "${BITCOIN_INSTALL_MAN_DESTINATION}/"
   done
 }
 
 bitcoin_tarball_test()
 {
+  BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
   echo 'Running the unit tests.'
   case "$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)" in
     *'No errors detected'*) ;;
@@ -224,6 +224,7 @@ install_system_updates
 install_runtime_dependencies
 
 if ! command -v bitcoind > /dev/null ||
+  ! command -v bitcoin-cli > /dev/null ||
   ! command -v bitcoin-qt > /dev/null; then
   bitcoin_tarball_download_extract_test_install
 fi
