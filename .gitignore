@@ -1,0 +1,3 @@
+# Ignore directory metadata
+.DS_Store
+Thumbs.db
