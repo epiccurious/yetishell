@@ -6,4 +6,6 @@
 
 Copy-paste the following command into Terminal:
 
+```
 sh -c "$(curl -fsSL https://github.com/epiccurious/yetishell/raw/master/yetishell.sh)"
+```
