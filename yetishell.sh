@@ -67,16 +67,11 @@ bitcoin_tarball_download_extract_test_install()
 {
   BITCOIN_CORE_EXTRACT_DIR="${TEMP_DIRECTORY}/bitcoin-core"
   BITCOIN_INSTALL_BIN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/bin"
-  BITCOIN_INSTALL_LIB_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/lib"
   BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
-  BITCOIN_INSTALL_INCLUDE_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/include"
   BITCOIN_INSTALL_MAN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/share/man/man1"
   BITCOIN_INSTALL_DESTINATION='/usr/local'
   BITCOIN_INSTALL_BIN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/bin"
-  BITCOIN_INSTALL_LIB_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/lib"
-  BITCOIN_INSTALL_INCLUDE_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/include"
   BITCOIN_INSTALL_MAN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/share/man/man1"
-
   BITCOIN_TARBALL_FILENAME="bitcoin-${TARGET_BITCOIN_VERSION}-${TARGET_ARCHITECTURE}-${TARGET_BITCOIN_TARBALL_OS}.tar.gz"
   BITCOIN_TARBALL_DESTINATION_PATH="${HOME}/Downloads/${BITCOIN_TARBALL_FILENAME}"
 
@@ -101,31 +96,6 @@ bitcoin_tarball_extract()
 bitcoin_tarball_install()
 {
   echo "Installing Bitcoin Core ${TARGET_BITCOIN_VERSION}."
-  # install the libraries
-  if [ -d "${BITCOIN_INSTALL_LIB_SOURCE}" ]; then
-    [ -d "${BITCOIN_INSTALL_LIB_DESTINATION}" ] ||
-      mkdir -p "${BITCOIN_INSTALL_LIB_DESTINATION}" 2> /dev/null ||
-      sudo mkdir "${BITCOIN_INSTALL_LIB_DESTINATION}" ||
-      throw_error "Unable to create directory ${BITCOIN_INSTALL_LIB_DESTINATION}."
-    
-    sudo cp \
-      "${BITCOIN_INSTALL_LIB_SOURCE}/libbitcoinconsensus.so.0.0.0" \
-      "${BITCOIN_INSTALL_LIB_DESTINATION}/libbitcoinconsensus.so.0.0.0"
-    (cd "${BITCOIN_INSTALL_LIB_DESTINATION}"/ && {
-      sudo ln -s -f libbitcoinconsensus.so.0.0.0 libbitcoinconsensus.so.0 || {
-        sudo rm -f libbitcoinconsensus.so.0
-        sudo ln -s libbitcoinconsensus.so.0.0.0 libbitcoinconsensus.so.0
-      }
-    })
-    (cd "${BITCOIN_INSTALL_LIB_DESTINATION}"/ && {
-      sudo ln -s -f libbitcoinconsensus.so.0.0.0 libbitcoinconsensus.so || {
-        sudo rm -f libbitcoinconsensus.so
-        sudo ln -s libbitcoinconsensus.so.0.0.0 libbitcoinconsensus.so
-      }
-    })
-    PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/sbin' \
-      ldconfig -n "${BITCOIN_INSTALL_LIB_DESTINATION}"
-  fi
 
   # install the binaries
   [ -d "${BITCOIN_INSTALL_BIN_DESTINATION}" ] ||
@@ -137,17 +107,6 @@ bitcoin_tarball_install()
       "${BITCOIN_INSTALL_BIN_SOURCE}/${bitcoin_executable}" \
       "${BITCOIN_INSTALL_BIN_DESTINATION}/"
   done
-
-  # install the header files
-  if [ -d "${BITCOIN_INSTALL_INCLUDE_SOURCE}" ]; then
-    [ -d "${BITCOIN_INSTALL_INCLUDE_DESTINATION}" ] ||
-      mkdir -p "${BITCOIN_INSTALL_INCLUDE_DESTINATION}" 2> /dev/null ||
-      sudo mkdir "${BITCOIN_INSTALL_INCLUDE_DESTINATION}" ||
-      throw_error "Unable to create directory ${BITCOIN_INSTALL_INCLUDE_DESTINATION}."
-    sudo install -c -m 644 \
-      "${BITCOIN_INSTALL_INCLUDE_SOURCE}/bitcoinconsensus.h" \
-      "${BITCOIN_INSTALL_INCLUDE_DESTINATION}/"
-  fi
 
   # install the binary man pages
   [ -d "${BITCOIN_INSTALL_MAN_DESTINATION}" ] ||
@@ -220,7 +179,6 @@ move_tarball_and_guix_sigs_from_temp_directory_to_downloads() {
   mv "${GUIX_SIGS_TEMPORARY_DIRECTORY}" "${GUIX_SIGS_DESTINATION_DIRECTORY}"
 }
 
-
 throw_error() {
   [ -n "$1" ] &&
     echo "ERROR: $1"
@@ -228,15 +186,19 @@ throw_error() {
 }
 
 install_runtime_dependencies() {
+  echo "Installing runtime dependencies"
   sudo apt-get -qq update
   sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --assume-yes --no-install-recommends \
     git gnupg libxcb-xinerama0 \
     > /dev/null 2>&1
+  echo "Installed runtime dependencies"
 }
 
 install_system_updates() {
+  echo "Installing system updates."
   sudo apt-get -qq update
-  sudo NEEDRESTART_MODE=a apt-get -qq full-upgrade --assume-yes 
+  sudo NEEDRESTART_MODE=a apt-get -qq full-upgrade --assume-yes
+  echo "Installed system updates."
 }
 
 TEMP_DIRECTORY="$(mktemp -d)"
@@ -260,7 +222,11 @@ fi
 check_internet_status
 install_system_updates
 install_runtime_dependencies
-bitcoin_tarball_download_extract_test_install
+
+if ! command -v bitcoind > /dev/null ||
+  ! command -v bitcoin-qt > /dev/null; then
+  bitcoin_tarball_download_extract_test_install
+fi
 
 [ -d "${BITCOIN_DATA_DIRECTORY}/" ] || mkdir "${BITCOIN_DATA_DIRECTORY}/"
 echo "server=1" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
@@ -288,64 +254,24 @@ while [ "${ibd_status}" = 'true' ]; do
   blocks=$(echo "${blockchain_info}" | jq '.blocks')
   headers=$(echo "${blockchain_info}" | jq '.headers')
   last_block_time=$(echo "${blockchain_info}" | jq '.time')
-  size_on_disk_in_mib=$(($(echo "${blockchain_info}" | jq '.size_on_disk') / BYTES_TO_KIB / KIB_TO_MIB))
+  current_chain_tip_timestamp="$(date -d @"${last_block_time}" | cut -c 5-)"
   sync_progress=$(echo "${blockchain_info}" | jq '.verificationprogress')
-
   # Handle case of early sync (e^-8 or e^-9) by replacing scientific notation with decimal percent
   case "${sync_progress}" in
     *e*) sync_progress_percent='0.0000001' ;;
     *) sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')" ;;
   esac
 
-  free_space_in_mib="$(get_free_space_in_mib)"
-
-  clear_the_terminal
+  clear
   if [ "${headers}" -eq 0 ]; then
-    log_info 'Pre-syncing the headers.'
-    headers_presync_last_log_line="$(grep 'Pre-synchronizing blockheaders' "${BITCOIN_CORE_DEBUG_LOG_FILE}" | tail -1 || true)"
-    if [ -n "${headers_presync_last_log_line}" ]; then
-      headers_presync_progress_percent="$(echo "${headers_presync_last_log_line}" | cut -d~ -f2 | cut -d% -f1)"
-    else
-      headers_presync_progress_percent='0.0'
-    fi
-    printf 'Headers presync progress:   %.1f %%\n' "${headers_presync_progress_percent}"
+    echo 'Pre-syncing the headers.'
   elif [ "${blocks}" -eq 0 ]; then
-    log_info 'Re-syncing the headers.'
-    headers_sync_last_log_line="$(grep 'Synchronizing blockheaders' "${BITCOIN_CORE_DEBUG_LOG_FILE}" | tail -1 || true)"
-    if [ -n "${headers_sync_last_log_line}" ]; then
-      headers_sync_progress_percent="$(echo "${headers_sync_last_log_line}" | cut -d~ -f2 | cut -d% -f1)"
-    else
-      headers_sync_progress_percent='0.0'
-    fi
-    printf 'Headers sync progress:      %.1f %%\n' "${headers_sync_progress_percent}"
+    echo 'Re-syncing the headers.'
   else
-    log_info 'Syncing the blockchain. Please be patient.'
+    echo 'Syncing the blockchain. Please be patient.'
     printf 'Sync progress:              %.3f %%\n' "${sync_progress_percent}"
     printf 'Blocks remaining:           %d\n' "$((headers - blocks))"
-
-    case "${TARGET_KERNEL}" in
-      Darwin | FreeBSD | NetBSD | OpenBSD)
-        current_chain_tip_timestamp="$(/bin/date -r "${last_block_time}" | cut -c 5-)"
-        ;;
-      *)
-        current_chain_tip_timestamp="$(date -d @"${last_block_time}" | cut -c 5-)"
-        ;;
-    esac
     printf 'Current chain tip:          %s\n' "${current_chain_tip_timestamp}"
-
-    printf '%s' 'Chain sync size:            '
-    if [ "${size_on_disk_in_mib}" -gt "${MIB_TO_GIB}" ]; then
-      printf '%d GiB\n' "$((size_on_disk_in_mib / MIB_TO_GIB))"
-    else
-      printf '%d MiB\n' "${size_on_disk_in_mib}"
-    fi
-  fi
-
-  printf '%s' 'Disk free space:            '
-  if [ "${free_space_in_mib}" -gt "${MIB_TO_GIB}" ]; then
-    printf '%d GiB\n' "$((free_space_in_mib / MIB_TO_GIB))"
-  else
-    printf '%d MiB\n' "${free_space_in_mib}"
   fi
 
   printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
