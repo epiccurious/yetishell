@@ -7,7 +7,6 @@ set -o nounset
 
 check_internet_status()
 {
-  ensure_curl_dependency
   log_info 'Checking for internet.'
   ( (check_internet_to_address 1.1.1.1 ||
     check_internet_to_address 1.1.0.0 ||
@@ -23,16 +22,19 @@ check_internet_to_address()
   check_internet_address="$1"
   CHECK_INTERNET_PORT='443'
   CHECK_INTERNET_TIMEOUT_SECONDS='10'
-  curl --silent --output /dev/null --retry 5 --connect-timeout "${CHECK_INTERNET_TIMEOUT_SECONDS}" \
-    "https://${check_internet_address}:${CHECK_INTERNET_PORT}" > /dev/null
+  wget --quiet --no-check-certificate \
+    --output-document=/dev/null \
+    --tries=5 \
+    --timeout="${CHECK_INTERNET_TIMEOUT_SECONDS}" \
+    "https://${check_internet_address}:${CHECK_INTERNET_PORT}"
 }
 
 bitcoin_tarball_download()
 {
   echo 'Downloading Bitcoin Core.'
-  wget "${BITCOIN_HASH_FILE_SOURCE}" -O "${BITCOIN_HASH_FILE}"
-  wget "${GPG_SIGNATURES_FILE_SOURCE}" -O "${GPG_SIGNATURES_FILE}" 
-  wget "${BITCOIN_TARBALL_FILE_SOURCE}" -O "${BITCOIN_TARBALL_TEMPORARY_PATH}" 
+  wget --tries=5 --quiet -O "${BITCOIN_HASH_FILE}" "${BITCOIN_HASH_FILE_SOURCE}"
+  wget --tries 5 --quiet -O "${GPG_SIGNATURES_FILE}" "${GPG_SIGNATURES_FILE_SOURCE}"
+  wget --tries 5 --quiet -O "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_FILE_SOURCE}"
 }
 
 bitcoin_tarball_download_and_validate()
@@ -228,7 +230,7 @@ throw_error() {
 install_runtime_dependencies() {
   sudo apt-get -qq update
   sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --assume-yes --no-install-recommends \
-    curl git gnupg libxcb-xinerama0 \
+    git gnupg libxcb-xinerama0 \
     > /dev/null 2>&1
 }
 
