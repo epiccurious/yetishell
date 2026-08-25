@@ -122,14 +122,10 @@ bitcoin_tarball_test()
   BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
   echo 'Running the unit tests.'
   UNIT_TEST_RESPONSE="$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)"
-  readonly UNIT_TEST_RESPONSE
-  case "${UNIT_TEST_RESPONSE}" in
-    *'No errors detected'*) ;;
-    *)
-      printf '\n%s\n' "${UNIT_TEST_RESPONSE}"
-      throw_error 'Unit tests failed.'
-      ;;
-  esac
+  if [[ "${UNIT_TEST_RESPONSE}" != *'No errors detected'* ]]; then
+    printf '\n%s\n' "${UNIT_TEST_RESPONSE}"
+    throw_error 'Unit tests failed.'
+  fi
 }
 
 bitcoin_tarball_validate_signatures()
@@ -148,14 +144,11 @@ bitcoin_tarball_validate_checksum()
   SHA256_CHECK="$(grep "${BITCOIN_TARBALL_FILENAME}" "${BITCOIN_HASH_FILENAME}" | sha256sum --check 2> /dev/null)"
   cd - > /dev/null
 
-  case "${SHA256_CHECK}" in
-    *'OK'*) 
-      echo 'Validated the checksum.'
-      ;;
-    *)
-      throw_error "INVALID CHECKSUM. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${BITCOIN_HASH_FILE}."
-      ;;
-  esac
+  if [[ "${SHA256_CHECK}" == *'OK'* ]]; then
+    echo 'Validated the checksum.'
+  else
+    throw_error "INVALID CHECKSUM. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${BITCOIN_HASH_FILE}."
+  fi
 }
 
 bitcoin_tarball_validate_count_signatures()
@@ -260,10 +253,11 @@ while [ "${ibd_status}" = 'true' ]; do
   current_chain_tip_timestamp="$(date -d @"${last_block_time}" | cut -c 5-)"
   sync_progress=$(echo "${blockchain_info}" | jq '.verificationprogress')
   # Handle case of early sync (e^-8 or e^-9) by replacing scientific notation with decimal percent
-  case "${sync_progress}" in
-    *e*) sync_progress_percent='0.0000001' ;;
-    *) sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')" ;;
-  esac
+  if [[ "${sync_progress}" == *e* ]]; then
+    sync_progress_percent='0.0000001'
+  else
+    sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')"
+  fi
 
   clear
   if [ "${headers}" -eq 0 ]; then
