@@ -121,7 +121,9 @@ bitcoin_tarball_test()
 {
   BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
   echo 'Running the unit tests.'
-  case "$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)" in
+  UNIT_TEST_RESPONSE="$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)"
+  readonly UNIT_TEST_RESPONSE
+  case "${UNIT_TEST_RESPONSE}" in
     *'No errors detected'*) ;;
     *)
       printf '\n%s\n' "${UNIT_TEST_RESPONSE}"
