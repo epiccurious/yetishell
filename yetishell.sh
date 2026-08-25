@@ -232,7 +232,7 @@ blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait ge
 ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 
 if [ "${ibd_status}" = 'true' ]; then
-  sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+  sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 fi
 
 while [ "${ibd_status}" = 'true' ]; do
@@ -267,5 +267,8 @@ while [ "${ibd_status}" = 'true' ]; do
   printf '\n'
   ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 done
+
+echo "Bitcoin Core's initial block download is complete. Please enter admin password to re-enable system sleep."
+sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 
 echo "This script has completed successfully"
