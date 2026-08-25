@@ -1,0 +1,22 @@
+name: Lint YAML
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+env:
+  TERM: xterm
+ jobs: 
+  yaml-lint:
+    name: Lint the yaml code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lint workflow files
+        shell: bash
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -verbose
+        
