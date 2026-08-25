@@ -249,7 +249,7 @@ SLEEP_TIME_SECONDS='10'
 blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
 ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 
-if [ ibd_status = 'true' ]; then
+if [ "${ibd_status}" = 'true' ]; then
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 fi
 
