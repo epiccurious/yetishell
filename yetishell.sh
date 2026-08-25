@@ -5,8 +5,7 @@
 set -o errexit
 set -o nounset
 
-check_internet_status()
-{
+check_internet_status() {
   echo 'Checking for internet.'
   ( (check_internet_to_address 1.1.1.1 ||
     check_internet_to_address 1.1.0.0 ||
@@ -17,8 +16,7 @@ check_internet_status()
   echo 'Internet checks passed.'
 }
 
-check_internet_to_address()
-{
+check_internet_to_address() {
   check_internet_address="$1"
   CHECK_INTERNET_PORT='443'
   CHECK_INTERNET_TIMEOUT_SECONDS='10'
@@ -29,16 +27,14 @@ check_internet_to_address()
     "https://${check_internet_address}:${CHECK_INTERNET_PORT}"
 }
 
-bitcoin_tarball_download()
-{
+bitcoin_tarball_download() {
   echo 'Downloading Bitcoin Core.'
   wget --tries=5 --quiet -O "${BITCOIN_HASH_FILE}" "${BITCOIN_HASH_FILE_SOURCE}"
   wget --tries 5 --quiet -O "${GPG_SIGNATURES_FILE}" "${GPG_SIGNATURES_FILE_SOURCE}"
   wget --tries 5 --quiet -O "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_FILE_SOURCE}"
 }
 
-bitcoin_tarball_download_and_validate()
-{
+bitcoin_tarball_download_and_validate() {
   BITCOIN_SOURCE="https://bitcoincore.org/bin/bitcoin-core-${TARGET_BITCOIN_VERSION}"
   BITCOIN_TARBALL_FILE_SOURCE="${BITCOIN_SOURCE}/${BITCOIN_TARBALL_FILENAME}"
   BITCOIN_HASH_FILENAME='SHA256SUMS'
@@ -62,8 +58,7 @@ bitcoin_tarball_download_and_validate()
   [ -f "${GPG_SIGNATURES_FILE}" ] && rm "${GPG_SIGNATURES_FILE}"
 }
 
-bitcoin_tarball_download_extract_test_install()
-{
+bitcoin_tarball_download_extract_test_install() {
   BITCOIN_CORE_EXTRACT_DIR="${TEMP_DIRECTORY}/bitcoin-core"
   BITCOIN_TARBALL_FILENAME="bitcoin-${TARGET_BITCOIN_VERSION}-${TARGET_ARCHITECTURE}-${TARGET_BITCOIN_TARBALL_OS}.tar.gz"
   BITCOIN_TARBALL_DESTINATION_PATH="${HOME}/Downloads/${BITCOIN_TARBALL_FILENAME}"
@@ -79,15 +74,13 @@ bitcoin_tarball_download_extract_test_install()
   echo 'Bitcoin Core installation complete.'
 }
 
-bitcoin_tarball_extract()
-{
+bitcoin_tarball_extract() {
   echo 'Extracting Bitcoin Core.'
   [ -d "${BITCOIN_CORE_EXTRACT_DIR}"/ ] || mkdir "${BITCOIN_CORE_EXTRACT_DIR}"
   tar -xzf "${BITCOIN_TARBALL_DESTINATION_PATH}" -C "${BITCOIN_CORE_EXTRACT_DIR}"/ --strip-components=1
 }
 
-bitcoin_tarball_install()
-{
+bitcoin_tarball_install() {
   BITCOIN_INSTALL_BIN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/bin"
   BITCOIN_INSTALL_MAN_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/share/man/man1"
   BITCOIN_INSTALL_DESTINATION='/usr/local'
@@ -117,8 +110,7 @@ bitcoin_tarball_install()
   done
 }
 
-bitcoin_tarball_test()
-{
+bitcoin_tarball_test() {
   BITCOIN_INSTALL_LIBEXEC_SOURCE="${BITCOIN_CORE_EXTRACT_DIR}/libexec"
   echo 'Running the unit tests.'
   UNIT_TEST_RESPONSE="$("${BITCOIN_INSTALL_LIBEXEC_SOURCE}"/test_bitcoin 2>&1)"
@@ -128,8 +120,7 @@ bitcoin_tarball_test()
   fi
 }
 
-bitcoin_tarball_validate_signatures()
-{
+bitcoin_tarball_validate_signatures() {
   GPG_GOOD_SIGNATURES_REQUIRED='7'
   GPG_GOOD_SIGNATURE_COUNT="$(bitcoin_tarball_validate_count_signatures)"
   if [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ]; then
@@ -138,8 +129,7 @@ bitcoin_tarball_validate_signatures()
   echo "Found ${GPG_GOOD_SIGNATURE_COUNT} good signatures."
 }
 
-bitcoin_tarball_validate_checksum()
-{
+bitcoin_tarball_validate_checksum() {
   cd "${TEMP_DIRECTORY}"/
   SHA256_CHECK="$(grep "${BITCOIN_TARBALL_FILENAME}" "${BITCOIN_HASH_FILENAME}" | sha256sum --check 2> /dev/null)"
   cd - > /dev/null
@@ -151,8 +141,7 @@ bitcoin_tarball_validate_checksum()
   fi
 }
 
-bitcoin_tarball_validate_count_signatures()
-{
+bitcoin_tarball_validate_count_signatures() {
   [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}"/ ] ||
     git clone --depth 1 --quiet "${GUIX_SIGS_REPO}.git" "${GUIX_SIGS_TEMPORARY_DIRECTORY}"
   gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/*.gpg
