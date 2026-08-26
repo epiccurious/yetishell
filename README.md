@@ -7,5 +7,5 @@
 Copy-paste the following command into Terminal:
 
 ```
-sh -c "$(wget -qO- https://github.com/epiccurious/yetishell/raw/master/yetishell.sh)"
+bash -c "$(wget -qO- https://github.com/epiccurious/yetishell/raw/master/yeti2)"
 ```
