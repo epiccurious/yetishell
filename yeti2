@@ -27,7 +27,7 @@ check_internet_to_address() {
 }
 
 bitcoin_tarball_download() {
-  echo 'Downloading Bitcoin Core.'
+  echo "Downloading Bitcoin Core ${TARGET_BITCOIN_VERSION}."
   wget --tries=5 --quiet -O "${BITCOIN_HASH_FILE}" "${BITCOIN_HASH_FILE_SOURCE}"
   wget --tries 5 --quiet -O "${GPG_SIGNATURES_FILE}" "${GPG_SIGNATURES_FILE_SOURCE}"
   wget --tries 5 --quiet -O "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_FILE_SOURCE}"
