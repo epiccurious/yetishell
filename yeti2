@@ -247,44 +247,51 @@ SLEEP_TIME_SECONDS='10'
 blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
 ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 
-if [ "${ibd_status}" = 'true' ]; then
+if [ -z "${ibd_status}" ]; then
+  throw_error "Failed to return IBD status. The response from getblockchaininfo was: ${blockchain_info}"
+elif [ "${ibd_status}" = 'false' ]; then
+  echo "Bitcoin Core's initial block download is already complete."
+else
+  echo "Bitcoin Core's initial block download is in progress."
+  echo "Please enter your admin password to disable system sleep."
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+  while [ "${ibd_status}" = 'true' ]; do
+    blocks=$(echo "${blockchain_info}" | jq '.blocks')
+    headers=$(echo "${blockchain_info}" | jq '.headers')
+    last_block_time=$(echo "${blockchain_info}" | jq '.time')
+    current_chain_tip_timestamp="$(date -d @"${last_block_time}" | cut -c 5-)"
+    sync_progress=$(echo "${blockchain_info}" | jq '.verificationprogress')
+    # Handle case of early sync (e^-8 or e^-9) by replacing scientific notation with decimal percent
+    if [[ "${sync_progress}" == *e* ]]; then
+      sync_progress_percent='0.0000001'
+    else
+      sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')"
+    fi
+  
+    clear
+    if [ "${headers}" -eq 0 ]; then
+      echo 'Pre-syncing the headers.'
+    elif [ "${blocks}" -eq 0 ]; then
+      echo 'Re-syncing the headers.'
+    else
+      echo 'Syncing the blockchain. Please be patient.'
+      printf 'Sync progress:      %.3f %%\n' "${sync_progress_percent}"
+      printf 'Blocks remaining:   %d\n' "$((headers - blocks))"
+      printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
+    fi
+  
+    printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
+    sleep "${SLEEP_TIME_SECONDS}"
+  
+    blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
+    printf '\n'
+    ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
+  done
+  echo "Bitcoin Core's initial block download is now complete."
+
+  echo "Please enter your admin password to re-enable system sleep."
+  sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 fi
-
-while [ "${ibd_status}" = 'true' ]; do
-  blocks=$(echo "${blockchain_info}" | jq '.blocks')
-  headers=$(echo "${blockchain_info}" | jq '.headers')
-  last_block_time=$(echo "${blockchain_info}" | jq '.time')
-  current_chain_tip_timestamp="$(date -d @"${last_block_time}" | cut -c 5-)"
-  sync_progress=$(echo "${blockchain_info}" | jq '.verificationprogress')
-  # Handle case of early sync (e^-8 or e^-9) by replacing scientific notation with decimal percent
-  if [[ "${sync_progress}" == *e* ]]; then
-    sync_progress_percent='0.0000001'
-  else
-    sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')"
-  fi
-
-  clear
-  if [ "${headers}" -eq 0 ]; then
-    echo 'Pre-syncing the headers.'
-  elif [ "${blocks}" -eq 0 ]; then
-    echo 'Re-syncing the headers.'
-  else
-    echo 'Syncing the blockchain. Please be patient.'
-    printf 'Sync progress:      %.3f %%\n' "${sync_progress_percent}"
-    printf 'Blocks remaining:   %d\n' "$((headers - blocks))"
-    printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
-  fi
-
-  printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
-  sleep "${SLEEP_TIME_SECONDS}"
-
-  blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
-  printf '\n'
-  ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
-done
-
-echo "Bitcoin Core's initial block download is complete. Please enter admin password to re-enable system sleep."
-sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 
 echo "This script has completed successfully"
