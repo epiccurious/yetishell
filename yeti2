@@ -120,7 +120,7 @@ bitcoin_tarball_test() {
 }
 
 bitcoin_tarball_validate_signatures() {
-  GPG_GOOD_SIGNATURES_REQUIRED='4'
+  GPG_GOOD_SIGNATURES_REQUIRED='8'
   GPG_GOOD_SIGNATURE_COUNT="$(bitcoin_tarball_validate_count_signatures)"
   [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ] &&
     throw_error "INVALID SIGNATURES. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${GPG_SIGNATURES_FILE}."
@@ -143,8 +143,13 @@ bitcoin_tarball_validate_count_signatures() {
   GPG_BUILDER_KEYS=(
     "Emzy.gpg"
     "Sjors.gpg"
+    "benthecarman.gpg"
     "fanquake.gpg"
+    "guggero.gpg"
     "hebasto.gpg"
+    "sedited.gpg"
+    "sipsorcery.gpg"
+    "svanstaa.gpg"
     "theStack.gpg"
   )
 
