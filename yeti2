@@ -159,7 +159,7 @@ bitcoin_tarball_validate_count_signatures() {
   for builder_key in "${GPG_BUILDER_KEYS[@]}"; do
     gpg --import --quiet "${gpg_builder_keys_directory}/${builder_key}"
   done
-  
+
   SIGNATURE_COUNT="$(gpg --verify "${GPG_SIGNATURES_FILE}" 2>&1 | grep -c '^gpg: Good signature from ')"
   pgrep '^gpg-agent$' > /dev/null && gpgconf --kill gpg-agent
   pgrep '^keyboxd$' > /dev/null && gpgconf --kill keyboxd
