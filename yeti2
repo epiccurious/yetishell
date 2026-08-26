@@ -122,10 +122,8 @@ bitcoin_tarball_test() {
 bitcoin_tarball_validate_signatures() {
   GPG_GOOD_SIGNATURES_REQUIRED='4'
   GPG_GOOD_SIGNATURE_COUNT="$(bitcoin_tarball_validate_count_signatures)"
-  echo "${GPG_GOOD_SIGNATURE_COUNT}"
-  if [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ]; then
+  [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ] &&
     throw_error "INVALID SIGNATURES. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${GPG_SIGNATURES_FILE}."
-  fi
   echo "Found ${GPG_GOOD_SIGNATURE_COUNT} good signatures."
 }
 
