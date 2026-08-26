@@ -268,7 +268,7 @@ else
     else
       sync_progress_percent="$(awk -v prog="${sync_progress}" 'BEGIN{printf "%f\n", prog * 100}')"
     fi
-  
+
     clear
     if [ "${headers}" -eq 0 ]; then
       echo 'Pre-syncing the headers.'
@@ -280,10 +280,10 @@ else
       printf 'Blocks remaining:   %d\n' "$((headers - blocks))"
       printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
     fi
-  
+
     printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
     sleep "${SLEEP_TIME_SECONDS}"
-  
+
     blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
     printf '\n'
     ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
