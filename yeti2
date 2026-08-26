@@ -4,6 +4,7 @@
 
 set -o errexit
 set -o nounset
+set -o pipefail
 
 check_internet_status() {
   echo 'Checking for internet.'
