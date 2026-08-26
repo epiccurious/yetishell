@@ -142,17 +142,25 @@ bitcoin_tarball_validate_checksum() {
 }
 
 bitcoin_tarball_validate_count_signatures() {
-  [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}"/ ] ||
-    git clone --depth 1 --quiet "${GUIX_SIGS_REPO}.git" "${GUIX_SIGS_TEMPORARY_DIRECTORY}"
-  
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/Emzy.gpg
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/Sjors.gpg
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/fanquake.gpg
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/hebaso.gpg
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/theStack.gpg
+  GPG_BUILDER_KEYS=(
+    "Emzy.gpg"
+    "Sjors.gpg"
+    "fanquake.gpg"
+    "hebaso.gpg"
+    "theStack.gpg"
+  )
 
-  SIGNATURE_COUNT="$(gpg --verify "${GPG_SIGNATURES_FILE}" 2>&1 | grep -c '^gpg: Good signature from ')" &&
-    readonly SIGNATURE_COUNT
+  if [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}"/ ]; then
+    gpg_builder_keys_directory="${GUIX_SIGS_DESTINATION_DIRECTORY}/builder-keys"
+  else
+    git clone --depth 1 --quiet "${GUIX_SIGS_REPO}.git" "${GUIX_SIGS_TEMPORARY_DIRECTORY}"
+    gpg_builder_keys_directory="${GUIX_SIGS_TEMPORARY_DIRECTORY}/builder-keys"
+  fi
+  for builder_key in "${GPG_BUILDER_KEYS[@]}"; do
+    gpg --import --quiet "${gpg_builder_keys_directory}/${builder_key}"
+  done
+  
+  SIGNATURE_COUNT="$(gpg --verify "${GPG_SIGNATURES_FILE}" 2>&1 | grep -c '^gpg: Good signature from ')"
   pgrep '^gpg-agent$' > /dev/null && gpgconf --kill gpg-agent
   pgrep '^keyboxd$' > /dev/null && gpgconf --kill keyboxd
   printf '%s\n' "${SIGNATURE_COUNT}"
@@ -163,9 +171,10 @@ move_tarball_and_guix_sigs_from_temp_directory_to_downloads() {
     mkdir -p "$(dirname "${BITCOIN_TARBALL_DESTINATION_PATH}")"
   mv "${BITCOIN_TARBALL_TEMPORARY_PATH}" "${BITCOIN_TARBALL_DESTINATION_PATH}"
 
-  [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}/" ] ||
+  [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}/" ] || {
     mkdir -p "${GUIX_SIGS_DESTINATION_DIRECTORY}"
-  mv "${GUIX_SIGS_TEMPORARY_DIRECTORY}" "${GUIX_SIGS_DESTINATION_DIRECTORY}"
+    mv "${GUIX_SIGS_TEMPORARY_DIRECTORY}" "${GUIX_SIGS_DESTINATION_DIRECTORY}"
+  }
 }
 
 throw_error() {
