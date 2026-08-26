@@ -146,7 +146,7 @@ bitcoin_tarball_validate_count_signatures() {
     "Emzy.gpg"
     "Sjors.gpg"
     "fanquake.gpg"
-    "hebaso.gpg"
+    "hebasto.gpg"
     "theStack.gpg"
   )
 
