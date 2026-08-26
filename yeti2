@@ -13,7 +13,6 @@ check_internet_status() {
     check_internet_to_address 9.9.9.11) &&
     check_internet_to_address bitcoincore.org) ||
     throw_error 'Internet checks failed.'
-  echo 'Internet checks passed.'
 }
 
 check_internet_to_address() {
@@ -187,19 +186,17 @@ throw_error() {
 }
 
 install_runtime_dependencies() {
-  echo "Installing runtime dependencies"
+  echo "Installing dependencies."
   sudo apt-get -qq update
   sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --assume-yes --no-install-recommends \
     git gnupg libxcb-xinerama0 \
     > /dev/null 2>&1
-  echo "Installed runtime dependencies"
 }
 
 install_system_updates() {
   echo "Installing system updates."
   sudo apt-get -qq update
   sudo NEEDRESTART_MODE=a apt-get -qq full-upgrade --assume-yes
-  echo "Installed system updates."
 }
 
 TEMP_DIRECTORY="$(mktemp -d)"
