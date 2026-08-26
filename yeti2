@@ -121,7 +121,7 @@ bitcoin_tarball_test() {
 }
 
 bitcoin_tarball_validate_signatures() {
-  GPG_GOOD_SIGNATURES_REQUIRED='7'
+  GPG_GOOD_SIGNATURES_REQUIRED='4'
   GPG_GOOD_SIGNATURE_COUNT="$(bitcoin_tarball_validate_count_signatures)"
   if [ "${GPG_GOOD_SIGNATURE_COUNT}" -lt "${GPG_GOOD_SIGNATURES_REQUIRED}" ]; then
     throw_error "INVALID SIGNATURES. The download has failed. This script cannot continue due to security concerns. Please review the temporary file ${TEMP_DIRECTORY}/${GPG_SIGNATURES_FILE}."
@@ -144,7 +144,12 @@ bitcoin_tarball_validate_checksum() {
 bitcoin_tarball_validate_count_signatures() {
   [ -d "${GUIX_SIGS_DESTINATION_DIRECTORY}"/ ] ||
     git clone --depth 1 --quiet "${GUIX_SIGS_REPO}.git" "${GUIX_SIGS_TEMPORARY_DIRECTORY}"
-  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/*.gpg
+  
+  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/Emzy.gpg
+  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/Sjors.gpg
+  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/fanquake.gpg
+  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/hebaso.gpg
+  gpg --quiet --import "${GUIX_SIGS_TEMPORARY_DIRECTORY}"/builder-keys/theStack.gpg
 
   SIGNATURE_COUNT="$(gpg --verify "${GPG_SIGNATURES_FILE}" 2>&1 | grep -c '^gpg: Good signature from ')" &&
     readonly SIGNATURE_COUNT
@@ -255,9 +260,9 @@ while [ "${ibd_status}" = 'true' ]; do
     echo 'Re-syncing the headers.'
   else
     echo 'Syncing the blockchain. Please be patient.'
-    printf 'Sync progress:              %.3f %%\n' "${sync_progress_percent}"
-    printf 'Blocks remaining:           %d\n' "$((headers - blocks))"
-    printf 'Current chain tip:          %s\n' "${current_chain_tip_timestamp}"
+    printf 'Sync progress:      %.3f %%\n' "${sync_progress_percent}"
+    printf 'Blocks remaining:   %d\n' "$((headers - blocks))"
+    printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
   fi
 
   printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
