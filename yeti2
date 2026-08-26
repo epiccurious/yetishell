@@ -157,8 +157,6 @@ bitcoin_tarball_validate_count_signatures() {
     gpg_builder_keys_directory="${GUIX_SIGS_TEMPORARY_DIRECTORY}/builder-keys"
   fi
   for builder_key in "${GPG_BUILDER_KEYS[@]}"; do
-    echo "DEBUG importing ${builder_key}"
-    find "${gpg_builder_keys_directory}" -name "${builder_key}" || echo "no builder key found"
     gpg --import --quiet "${gpg_builder_keys_directory}/${builder_key}"
   done
 
