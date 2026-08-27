@@ -250,9 +250,9 @@ ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 if [ -z "${ibd_status}" ]; then
   throw_error "Failed to return IBD status. The response from getblockchaininfo was: ${blockchain_info}"
 elif [ "${ibd_status}" = 'false' ]; then
-  echo "Bitcoin Core's initial block download is already complete."
+  echo "Initial block download is already complete."
 else
-  echo "Bitcoin Core's initial block download is in progress."
+  echo "Initial block download is in progress."
   echo "Please enter your admin password to disable system sleep."
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 
@@ -288,7 +288,7 @@ else
     printf '\n'
     ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
   done
-  echo "Bitcoin Core's initial block download is now complete."
+  echo "Initial block download is now complete."
 
   echo "Please enter your admin password to re-enable system sleep."
   sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
