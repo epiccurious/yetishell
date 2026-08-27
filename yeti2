@@ -28,7 +28,7 @@ check_internet_to_address() {
 }
 
 check_sudo_permissions() {
-  log_info 'Please enter your password to log in, if requested.'
+  echo 'Please enter your password to log in, if requested.'
   sudo --validate
 }
 
