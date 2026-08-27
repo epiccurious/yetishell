@@ -224,7 +224,7 @@ BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
 BITCOIN_CORE_PID_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoind.pid"
 
 TARGET_OS_ERROR_MESSAGE="Must be running Ubuntu ${TARGET_OS_VERSION_ID}."
-[ "$(uname -m)" != 'Linux' ] && throw_error "${TARGET_OS_ERROR_MESSAGE}"
+[ "$(uname -s)" != 'Linux' ] && throw_error "${TARGET_OS_ERROR_MESSAGE}"
 os_release_id="$(grep '^ID=' /etc/os-release | cut -d= -f2)"
 os_version_id="$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | cut -d'"' -f2)"
 
