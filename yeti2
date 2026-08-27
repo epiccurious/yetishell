@@ -30,7 +30,7 @@ check_internet_to_address() {
 check_sudo_permissions() {
   sudo --non-interactive --validate 2> /dev/null || {
     echo 'Please enter your user password.'
-    echo '(The same one you used to log in.)'
+    echo '(Same one you used to log in.)'
     sudo --validate
   }
 }
