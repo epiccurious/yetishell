@@ -29,7 +29,8 @@ check_internet_to_address() {
 
 check_sudo_permissions() {
   sudo --non-interactive --validate 2> /dev/null || {
-    echo 'Please enter your user password - the same one you used to log in.'
+    echo 'Please enter your password.'
+    echo '(Same one you use to log in.)'
     sudo --validate
   }
 }
@@ -217,8 +218,10 @@ TARGET_OS_VERSION_ID='26.04'
 TARGET_BITCOIN_TARBALL_OS='linux-gnu'
 
 TARGET_BITCOIN_VERSION='31.1'
+
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
+BITCOIN_CORE_PID_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoind.pid"
 
 TARGET_OS_ERROR_MESSAGE="Must be running Ubuntu ${TARGET_OS_VERSION_ID}."
 [ "$(uname -m)" != 'Linux' ] && throw_error "${TARGET_OS_ERROR_MESSAGE}"
@@ -247,7 +250,13 @@ echo "prune=200000" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
 # prune is set to 200 GiB
 # TODO determine reasonable prune value or calculate it dynamically
 
-setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+if [[ ! -f "${BITCOIN_CORE_PID_FILE}" ]]; then
+  setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+elif [[ "$(ps -p "$(< "${BITCOIN_CORE_PID_FILE}")" -o comm=)" =~ ^(bitcoind|bitcoin-qt)$ ]]; then
+  echo 'Found bitcoin process already running.'
+else
+  throw_error "Found pidfile but can't find running process. Please run 'rm ~/.bitcoin/bitcoind.pid' then restart script."
+fi
 
 echo 'Checking the RPC status.'
 BITCOIN_RPC_TIMEOUT_SECONDS=300
