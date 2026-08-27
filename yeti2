@@ -216,7 +216,9 @@ TARGET_ARCHITECTURE="$(uname -m)"        # for example arm64, x86_64
 TARGET_OS_RELEASE='Ubuntu'
 TARGET_BITCOIN_TARBALL_OS='linux-gnu'
 
+# bump the Bitcoin Core version on major releases every 6 months or on any minor releases
 TARGET_BITCOIN_VERSION='31.1'
+# bump the Ubuntu LTS version on major releases every 2 years or on any minor releases
 TARGET_UBUNTU_VERSION='26.04'
 
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
