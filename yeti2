@@ -246,6 +246,7 @@ echo "prune=200000" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
 # TODO determine reasonable prune value or calculate it dynamically
 
 setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+echo 'Launched Bitcoin Core'
 
 echo 'Checking the RPC status.'
 BITCOIN_RPC_TIMEOUT_SECONDS=300
@@ -263,6 +264,10 @@ elif [ "${ibd_status}" = 'false' ]; then
   echo 'Initial block download is already complete.'
 else
   echo 'Initial block download is in progress.'
+  [[ "${CI:-} = 'true' ]] && {
+    echo 'Ending CI/CD test session.'
+  }
+
   echo 'Disabling system sleep.'
   check_sudo_permissions
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
