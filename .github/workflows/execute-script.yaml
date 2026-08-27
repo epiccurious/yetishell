@@ -1,0 +1,29 @@
+name: Execute Script
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+env:
+  TERM: xterm
+
+jobs:
+  shell-lint:
+    name: Run the script
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v5
+      - name: Run script
+        run: |
+          chmod u+x yeti2
+          bash -c ./yeti2 || {
+            echo 'ERROR: yeti2 script returned non-zero exit status.'
+            [ -f ${HOME}/.bitcoin/debug.log ] && tail -20 ${HOME}/.bitcoin/debug.log
+            echo 'INFO:  Restarting yeti2 script with x-trace enabled.'
+            bash -x ./yeti2
+          }
