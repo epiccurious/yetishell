@@ -263,7 +263,7 @@ elif [ "${ibd_status}" = 'false' ]; then
   echo 'Initial block download is already complete.'
 else
   echo 'Initial block download is in progress.'
-  echo 'Disabling system sleep.
+  echo 'Disabling system sleep.'
   check_sudo_permissions
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 
