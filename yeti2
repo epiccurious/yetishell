@@ -279,7 +279,7 @@ elif [ "${ibd_status}" = 'false' ]; then
   echo 'Initial block download is already complete.'
 else
   echo 'Initial block download is in progress.'
-  [[ "${CI:-} = 'true' ]] && {
+  [[ "${CI:-}" = 'true' ]] && {
     echo 'Ending CI/CD test session.'
   }
 
