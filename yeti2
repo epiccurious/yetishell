@@ -250,7 +250,7 @@ echo "prune=200000" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
 # prune is set to 200 GiB
 # TODO determine reasonable prune value or calculate it dynamically
 
-if [[ "${CI:-}" = 'true' ]];
+if [[ "${CI:-}" = 'true' ]]; then
   bitcoind --daemonwait --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1
 elif [[ ! -f "${BITCOIN_CORE_PID_FILE}" ]] && command -v bitcoin-qt > /dev/null; then
   setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
