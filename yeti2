@@ -29,7 +29,8 @@ check_internet_to_address() {
 
 check_sudo_permissions() {
   sudo --non-interactive --validate 2> /dev/null || {
-    echo 'Please enter your user password - the same one you used to log in.'
+    echo 'Please enter your password.'
+    echo '(Same one you use to log in.)'
     sudo --validate
   }
 }
@@ -220,6 +221,7 @@ TARGET_UBUNTU_VERSION='26.04'
 
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
+BITCOIN_CORE_PID_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoind.pid"
 
 os_release_id="$(grep '^ID=' /etc/os-release | cut -d= -f2)"
 os_version_id="$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | cut -d'"' -f2)"
@@ -246,7 +248,13 @@ echo "prune=200000" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
 # prune is set to 200 GiB
 # TODO determine reasonable prune value or calculate it dynamically
 
-setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+if [[ ! -f "${BITCOIN_CORE_PID_FILE}" ]]; then
+  setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+elif [[ "$(ps -p "$(< "${BITCOIN_CORE_PID_FILE}")" -o comm=)" =~ ^(bitcoind|bitcoin-qt)$ ]]; then
+  echo 'Found bitcoin process already running.'
+else
+  throw_error "Found pidfile but can't find running process. Please run 'rm ~/.bitcoin/bitcoind.pid' then restart script."
+fi
 
 echo 'Checking the RPC status.'
 BITCOIN_RPC_TIMEOUT_SECONDS=300
@@ -254,7 +262,7 @@ if ! bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait --rpcwaittimeou
   throw_error "RPC communication failed after ${BITCOIN_RPC_TIMEOUT_SECONDS} seconds."
 fi
 
-SLEEP_TIME_SECONDS='10'
+IBD_SLEEP_TIME_SECONDS='30'
 blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
 ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 
@@ -293,8 +301,8 @@ else
       printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
     fi
 
-    printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
-    sleep "${SLEEP_TIME_SECONDS}"
+    printf '%s' "This info will refresh in ${IBD_SLEEP_TIME_SECONDS} seconds."
+    sleep "${IBD_SLEEP_TIME_SECONDS}"
 
     blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
     printf '\n'
