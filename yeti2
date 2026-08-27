@@ -253,7 +253,7 @@ if ! bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait --rpcwaittimeou
   throw_error "RPC communication failed after ${BITCOIN_RPC_TIMEOUT_SECONDS} seconds."
 fi
 
-SLEEP_TIME_SECONDS='10'
+IBD_SLEEP_TIME_SECONDS='30'
 blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
 ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 
@@ -292,8 +292,8 @@ else
       printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
     fi
 
-    printf '%s' "This info will refresh in ${SLEEP_TIME_SECONDS} seconds."
-    sleep "${SLEEP_TIME_SECONDS}"
+    printf '%s' "This info will refresh in ${IBD_SLEEP_TIME_SECONDS} seconds."
+    sleep "${IBD_SLEEP_TIME_SECONDS}"
 
     blockchain_info=$(bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait getblockchaininfo)
     printf '\n'
