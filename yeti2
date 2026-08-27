@@ -27,6 +27,13 @@ check_internet_to_address() {
     "https://${check_internet_address}:${CHECK_INTERNET_PORT}"
 }
 
+check_sudo_permissions() {
+  sudo --non-interactive --validate 2> /dev/null || {
+    echo 'Please enter your user password - the same one you used to log in.'
+    sudo --validate
+  }
+}
+
 bitcoin_tarball_download() {
   echo "Downloading Bitcoin Core ${TARGET_BITCOIN_VERSION}."
   wget --tries=5 --quiet -O "${BITCOIN_HASH_FILE}" "${BITCOIN_HASH_FILE_SOURCE}"
@@ -88,6 +95,7 @@ bitcoin_tarball_install() {
   BITCOIN_INSTALL_MAN_DESTINATION="${BITCOIN_INSTALL_DESTINATION}/share/man/man1"
 
   echo "Installing Bitcoin Core ${TARGET_BITCOIN_VERSION}."
+  check_sudo_permissions
 
   # install the binaries
   [ -d "${BITCOIN_INSTALL_BIN_DESTINATION}" ] ||
@@ -198,7 +206,8 @@ install_runtime_dependencies() {
 install_system_updates() {
   echo "Installing system updates."
   sudo apt-get -qq update
-  sudo NEEDRESTART_MODE=a apt-get -qq full-upgrade --assume-yes
+  sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get -qq full-upgrade --assume-yes \
+    > /dev/null 2>&1
 }
 
 TEMP_DIRECTORY="$(mktemp -d)"
@@ -220,6 +229,7 @@ if [ "${os_release_id}" != "${TARGET_OS_RELEASE_ID}" ] ||
 fi
 
 check_internet_status
+check_sudo_permissions
 install_system_updates
 install_runtime_dependencies
 
@@ -250,10 +260,11 @@ ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
 if [ -z "${ibd_status}" ]; then
   throw_error "Failed to return IBD status. The response from getblockchaininfo was: ${blockchain_info}"
 elif [ "${ibd_status}" = 'false' ]; then
-  echo "Initial block download is already complete."
+  echo 'Initial block download is already complete.'
 else
-  echo "Initial block download is in progress."
-  echo "Please enter your admin password to disable system sleep."
+  echo 'Initial block download is in progress.'
+  echo 'Disabling system sleep.'
+  check_sudo_permissions
   sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 
   while [ "${ibd_status}" = 'true' ]; do
@@ -288,9 +299,10 @@ else
     printf '\n'
     ibd_status=$(echo "${blockchain_info}" | jq '.initialblockdownload')
   done
-  echo "Initial block download is now complete."
+  echo 'Initial block download is now complete.'
 
-  echo "Please enter your admin password to re-enable system sleep."
+  echo 'Re-enabling system sleep.'
+  check_sudo_permissions
   sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 fi
 
