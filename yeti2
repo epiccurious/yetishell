@@ -245,7 +245,11 @@ echo "prune=200000" >> "${BITCOIN_CORE_CONFIG_FILE:?}"
 # prune is set to 200 GiB
 # TODO determine reasonable prune value or calculate it dynamically
 
-setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+if command -v bitcoin-qt > /dev/null && [[ "${CI:-}" != 'true' ]]; then
+  setsid bitcoin-qt --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1 < /dev/null &
+else
+  bitcoind --daemonwait --datadir="${BITCOIN_DATA_DIRECTORY}" > /dev/null 2>&1
+fi
 echo 'Launched Bitcoin Core'
 
 echo 'Checking the RPC status.'
