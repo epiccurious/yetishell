@@ -22,7 +22,9 @@ jobs:
         run: |
           chmod u+x yeti2
           bash -c ./yeti2 || {
-            echo 'ERROR: yeti2 returned non-zero exit status'
-            echo 'INFO:  re-running yeti2 with x-trace enabled.'
+            echo 'ERROR: yeti2 script returned non-zero exit status.'
+            [ -f ${HOME}/.bitcoin/debug.log ] &&
+              tail -20 ${HOME}/.bitcoin/debug.log
+            echo 'INFO:  Restarting yeti2 script with x-trace enabled.'
             bash -x ./yeti2
           }
