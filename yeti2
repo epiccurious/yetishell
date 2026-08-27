@@ -223,8 +223,9 @@ BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
 os_release_id="$(grep '^ID=' /etc/os-release | cut -d= -f2)"
 os_version_id="$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | cut -d'"' -f2)"
 
-if [ "${os_release_id}" != "${TARGET_OS_RELEASE_ID}" ] ||
-  [ "${os_version_id}" != "${TARGET_OS_VERSION_ID}" ]; then
+if [[ "$(uname -s)" != 'Linux' ]] ||
+  [[ "${os_release_id}" != "${TARGET_OS_RELEASE_ID}" ]] ||
+  [[ "${os_version_id}" != "${TARGET_OS_VERSION_ID}" ]]; then
   throw_error "Must be running Ubuntu ${TARGET_OS_VERSION_ID}"
 fi
 
