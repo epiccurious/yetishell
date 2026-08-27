@@ -28,8 +28,10 @@ check_internet_to_address() {
 }
 
 check_sudo_permissions() {
-  echo 'Please enter your password to log in, if requested.'
-  sudo --validate
+  sudo --non-interactive --validate 2>/dev/null || {
+    echo 'Please enter your user password - the same one you used to log in.'
+    sudo --validate
+  }
 }
 
 bitcoin_tarball_download() {
