@@ -279,9 +279,6 @@ elif [ "${ibd_status}" = 'false' ]; then
   echo 'Initial block download is already complete.'
 else
   echo 'Initial block download is in progress.'
-  [[ "${CI:-}" = 'true' ]] && {
-    echo 'Ending CI/CD test session.'
-  }
 
   echo 'Disabling system sleep.'
   check_sudo_permissions
@@ -311,6 +308,11 @@ else
       printf 'Blocks remaining:   %d\n' "$((headers - blocks))"
       printf 'Current chain tip:  %s\n' "${current_chain_tip_timestamp}"
     fi
+
+    [[ "${CI:-}" = 'true' ]] && {
+      echo 'Ending CI/CD test session.'
+      exit 0
+    }
 
     printf '%s' "This info will refresh in ${IBD_SLEEP_TIME_SECONDS} seconds."
     sleep "${IBD_SLEEP_TIME_SECONDS}"
