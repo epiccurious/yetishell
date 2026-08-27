@@ -1,0 +1,28 @@
+name: Execute Script
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+env:
+  TERM: xterm
+
+jobs:
+  shell-lint:
+    name: Run the script
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v5
+      - name: Run script
+        run: |
+          chmod u+x yeti2
+          bash -c ./yeti2 || {
+            echo 'ERROR: yeti2 returned non-zero exit status'
+            echo 'INFO:  re-running yeti2 with x-trace enabled.'
+            bash -x ./yeti2
+          }
