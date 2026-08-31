@@ -100,7 +100,7 @@ for dvd_index in {1..7}; do
   done
   echo "Burning ISO for Archive DVD ${dvd_index} to disc."
   [ -f "${disc_iso_path}" ] ||
-    throw_error "Cannot find ISO at "${disc_iso_path}"
+    throw_error "Cannot find ISO at ${disc_iso_path}"
   xorriso -as cdrecord -v dev=/dev/sr0 "${disc_iso_path}"
   echo "Please remove Archive DVD ${dvd_index}."
 done
