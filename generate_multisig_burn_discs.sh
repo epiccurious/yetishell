@@ -5,6 +5,8 @@
 # start under the assumption that Bitcoin Core is running and
 # the system is airgapped
 
+BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
+
 echo 'Checking the RPC status.'
 BITCOIN_RPC_TIMEOUT_SECONDS=300
 if ! bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait --rpcwaittimeout="${BITCOIN_RPC_TIMEOUT_SECONDS}" getrpcinfo > /dev/null; then
