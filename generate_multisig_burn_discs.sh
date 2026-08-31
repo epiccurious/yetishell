@@ -83,9 +83,14 @@ cd "${BITCOIN_DATA_DIRECTORY}/" ||
   throw_error "Unable to access ${BITCOIN_DATA_DIRECTORY}/."
 
 for dvd_index in {1..7}; do
+  disc_iso_path="${HOME}/Downloads/archive_00${dvd_index}.iso"
   echo "Generating ISO for Archive DVD ${dvd_index}."
+  [ -f "${disc_iso_path}" ] && {
+    echo "Removing pre-existing ISO $(basename "${disc_iso_path}")."
+    rm "${disc_iso_path}"
+  }
   xorriso -for_backup -xattr user -volid "ARCHIVE_00${dvd_index}" \
-    -outdev "${HOME}/Downloads/archive_00${dvd_index}.iso" \
+    -outdev "${disc_iso_path}" \
     -add "./key_${dvd_index}" "./multisig_watch_wallet"
   eject "${DVD_WRITER_DEVICE}"
   read -r -p "Press insert a blank Archive DVD ${dvd_index} then press ENTER to continue..."
@@ -94,7 +99,9 @@ for dvd_index in {1..7}; do
     read -r -p "Please insert a blank disc for Archive DVD ${dvd_index} and press ENTER to continue."
   done
   echo "Burning ISO for Archive DVD ${dvd_index} to disc."
-  xorriso -as cdrecord -v dev=/dev/sr0 "archive_00${dvd_index}.iso"
+  [ -f "${disc_iso_path}" ] ||
+    throw_error "Cannot find ISO at "${disc_iso_path}"
+  xorriso -as cdrecord -v dev=/dev/sr0 "${disc_iso_path}"
   echo "Please remove Archive DVD ${dvd_index}."
 done
 eject "${DVD_WRITER_DEVICE}"
