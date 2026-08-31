@@ -84,16 +84,19 @@ cd "${BITCOIN_DATA_DIRECTORY}/" ||
 
 for dvd_index in {1..7}; do
   echo "Generating ISO for Archive DVD ${dvd_index}."
-  # generate an iso with a title of ARCHIVE_00${cd_index} and containing key_${cd_index} and multisig_watch_wallet
-  # xorisso -o archive_00${cd_index}.iso key_1/* multisig_watch_wallet/*
+  xorriso -for_backup -xattr user -volid "ARCHIVE_00${dvd_index}" \
+    -outdev "${HOME}/Downloads/archive_00${dvd_index}.iso" \
+    -add "./key_${dvd_index}" "./multisig_watch_wallet"
   eject "${DVD_WRITER_DEVICE}"
-  read -r -p "Press insert Archive DVD ${dvd_index} then press ENTER to continue..."
-  echo 'Checking if disc is burnable.'
-  # check if disk status: " is blank"
+  read -r -p "Press insert a blank Archive DVD ${dvd_index} then press ENTER to continue..."
+  echo 'Checking if disc is blank.'
+  until xorriso -outdev /dev/sr0 -toc 2>&1 | grep -E "^Media status :" | head -1 | grep -Eq "is blank$"; do
+    read -r -p "Please insert a blank disc for Archive DVD ${dvd_index} and press ENTER to continue."
+  done
   echo "Burning ISO for Archive DVD ${dvd_index} to disc."
-  # xorisso -as cdwriter ...
+  xorriso -as cdrecord -v dev=/dev/sr0 "archive_00${dvd_index}.iso"
   echo "Please remove Archive DVD ${dvd_index}."
 done
 eject "${DVD_WRITER_DEVICE}"
 
-read -r -p "Finished burning all of the Archive DVDs. Press ENTER to continue..."
+read -r -p "Finished burning all of the Archive DVDs. Press ENTER to exit the script..."
