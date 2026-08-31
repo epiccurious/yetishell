@@ -48,13 +48,13 @@ done
 echo 'Building the descriptor.'
 desc="wsh(sortedmulti(3,${xpubs["xpub_1"]},${xpubs["xpub_2"]},${xpubs["xpub_3"]},${xpubs["xpub_4"]},${xpubs["xpub_5"]},${xpubs["xpub_6"]},${xpubs["xpub_7"]}))"
 echo 'Getting the descriptor checksum.'
-checksum=$(bitcoin-cli getdescriptorinfo $desc | jq -r '.checksum')
+checksum=$(bitcoin-cli getdescriptorinfo "${desc}" | jq -r '.checksum')
 echo 'Generating importable JSON including descriptor with checksum and metadata flags.'
 multisig_desc="[{\"desc\": \"${desc}#${checksum}\", \"active\": true, \"timestamp\": \"now\"}]"
 echo 'Creating multisig watch-only wallet.'
 bitcoin-cli -named createwallet "multisig_watch_wallet" true true
 echo 'Importing JSON descriptor into multisig watch-only wallet.'
-bitcoin-cli -rpcwallet="multisig_watch_wallet" importdescriptors "$multisig_desc"
+bitcoin-cli -rpcwallet="multisig_watch_wallet" importdescriptors "${multisig_desc}"
 echo 'Printing wallet metadata for the multisig watch-only wallet.'
 bitcoin-cli -rpcwallet="multisig_watch_wallet" getwalletinfo
 
