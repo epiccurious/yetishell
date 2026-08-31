@@ -30,11 +30,11 @@ done
 
 declare -A xpubs
 for xpub_index in {1..7}; do
- xpubs["xpub_${xpub_index}"]=$(
-   bitcoin-cli -rpcwallet="key_${xpub_index}" listdescriptors |
-     jq -r '.descriptors | [.[] | select(.desc | startswith("wpkh") and contains("/0/*") )][0] | .desc' |
-     awk -F '[()]' '{print $2}'
- )
+  xpubs["xpub_${xpub_index}"]=$(
+    bitcoin-cli -rpcwallet="key_${xpub_index}" listdescriptors |
+      jq -r '.descriptors | [.[] | select(.desc | startswith("wpkh") and contains("/0/*") )][0] | .desc' |
+      awk -F '[()]' '{print $2}'
+  )
 done
 # alternate parse without grep is:
 # | .desc' | sed -n 's/.*(\([^)]*\)).*/\1/p')
@@ -73,7 +73,7 @@ for dvd_index in {1..7}; do
   echo "Generating ISO for Archive DVD ${dvd_index}."
   # generate an iso with a title of ARCHIVE_00${cd_index} and containing key_${cd_index} and multisig_watch_wallet
   # xorisso -o archive_00${cd_index}.iso key_1/* multisig_watch_wallet/*
-  eject "${DVD_DEVICE}"
+  eject "${DVD_WRITER_DEVICE}"
   read -r -p "Press insert Archive DVD ${dvd_index} then press ENTER to continue..."
   echo 'Checking if disc is burnable.'
   # check if disk status: " is blank"
@@ -81,7 +81,6 @@ for dvd_index in {1..7}; do
   # xorisso -as cdwriter ...
   echo "Please remove Archive DVD ${dvd_index}."
 done
-eject "${DVD_DEVICE}"
+eject "${DVD_WRITER_DEVICE}"
 
 read -r -p "Finished burning all of the Archive DVDs. Press ENTER to continue..."
-
