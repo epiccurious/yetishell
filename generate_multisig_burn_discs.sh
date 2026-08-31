@@ -70,7 +70,9 @@ DVD_WRITER_DEVICE="$(readlink -f "${DEFAULT_CDROM}")"
 # TODO (continued) only throw error is both sr0 and sr1 lack DVD capability
 readonly DVD_WRITER_DEVICE
 
-cd "${HOME}/.bitcoin"
+cd "${BITCOIN_DATA_DIRECTORY}/" ||
+  throw_error "Unable to access ${BITCOIN_DATA_DIRECTORY}/."
+
 for dvd_index in {1..7}; do
   echo "Generating ISO for Archive DVD ${dvd_index}."
   # generate an iso with a title of ARCHIVE_00${cd_index} and containing key_${cd_index} and multisig_watch_wallet
