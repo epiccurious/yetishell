@@ -1,4 +1,4 @@
-name: Lint CI
+name: Lint bash
 on:
   pull_request:
   push:
@@ -12,7 +12,7 @@ env:
 
 jobs:
   shell-lint:
-    name: Lint the shell code
+    name: Lint the bash shell code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
