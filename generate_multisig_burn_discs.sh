@@ -9,9 +9,8 @@ BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 
 echo 'Checking the RPC status.'
 BITCOIN_RPC_TIMEOUT_SECONDS=300
-if ! bitcoin-cli --datadir="${BITCOIN_DATA_DIRECTORY}" --rpcwait --rpcwaittimeout="${BITCOIN_RPC_TIMEOUT_SECONDS}" getrpcinfo > /dev/null; then
+bitcoin-cli --rpcwait --rpcwaittimeout="${BITCOIN_RPC_TIMEOUT_SECONDS}" getrpcinfo > /dev/null ||
   throw_error "RPC communication failed after ${BITCOIN_RPC_TIMEOUT_SECONDS} seconds."
-fi
 
 # TODO add a check that networking is disabled
 
@@ -35,7 +34,8 @@ for xpub_index in {1..7}; do
   xpubs["xpub_${xpub_index}"]=$(
     bitcoin-cli -rpcwallet="key_${xpub_index}" listdescriptors |
       jq -r '.descriptors | [.[] | select(.desc | startswith("wpkh") and contains("/0/*") )][0] | .desc' |
-      awk -F '[()]' '{print $2}'
+      awk -F '[()]' '{print $2}' |
+      sed 's /0/\* /<0;1>/* '
   )
 done
 # alternate parse without grep is:
@@ -58,11 +58,10 @@ bitcoin-cli -rpcwallet="multisig_watch_wallet" importdescriptors "${multisig_des
 echo 'Printing wallet metadata for the multisig watch-only wallet.'
 bitcoin-cli -rpcwallet="multisig_watch_wallet" getwalletinfo
 
-echo 'All wallet files are created.'
-echo 'Beginning the DVD burning process.'
+echo 'All wallet files are created. Beginning the DVD burning process.'
 
 readonly DEFAULT_CDROM='/dev/cdrom'
-until [ -f "${DEFAULT_CDROM}" ]; do echo 'DVD writer not found. Please connect your DVD writer via USB' && sleep 5; done
+until [ -f "${DEFAULT_CDROM}" ]; do echo 'DVD writer not found. Please connect your DVD writer via USB.' && sleep 10; done
 DVD_WRITER_DEVICE="$(readlink -f "${DEFAULT_CDROM}")"
 /usr/lib/udev/cdrom_id --lock-media /dev/sr0 | grep -Fq 'ID_CDROM_DVD_PLUS_R=1' ||
   throw_error "The CD drive ${DVD_WRITER_DEVICE} does not have the DVD+R burning capability."
