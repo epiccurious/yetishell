@@ -5,6 +5,16 @@
 # start under the assumption that Bitcoin Core is running and
 # the system is airgapped
 
+set -o errexit
+set -o nounset
+set -o pipefail
+
+throw_error() {
+  [ -n "$1" ] &&
+    echo "ERROR: $1"
+  exit 1
+}
+
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 
 echo 'Checking the RPC status.'
