@@ -219,7 +219,7 @@ TARGET_BITCOIN_TARBALL_OS='linux-gnu'
 # bump the Bitcoin Core version on major releases every 6 months or on any minor releases
 TARGET_BITCOIN_VERSION='31.1'
 # bump the Ubuntu LTS version on major releases every 2 years or on any minor releases
-TARGET_UBUNTU_VERSION='26.04'
+TARGET_OS_VERSION_ID='26.04'
 
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
@@ -229,8 +229,8 @@ os_release_id="$(grep '^ID=' /etc/os-release | cut -d= -f2)"
 os_version_id="$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | cut -d'"' -f2)"
 
 if [ "${os_release_id}" != "${TARGET_OS_RELEASE_ID,,}" ] ||
-  [ "${os_version_id}" != "${TARGET_UBUNTU_VERSION}" ]; then
-  throw_error "Must be running ${TARGET_OS_RELEASE} ${TARGET_UBUNTU_VERSION}."
+  [ "${os_version_id}" != "${TARGET_OS_VERSION_ID}" ]; then
+  throw_error "Must be running ${TARGET_OS_RELEASE} ${TARGET_OS_VERSION_ID}."
 fi
 
 check_internet_status
