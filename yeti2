@@ -212,7 +212,7 @@ install_system_updates() {
 }
 
 TEMP_DIRECTORY="$(mktemp -d)"
-TARGET_ARCHITECTURE="$(uname -m)"        # for example arm64, x86_64
+TARGET_ARCHITECTURE="$(uname -m)" # for example arm64, x86_64
 TARGET_OS_RELEASE='Ubuntu'
 TARGET_BITCOIN_TARBALL_OS='linux-gnu'
 
