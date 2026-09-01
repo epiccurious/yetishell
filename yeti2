@@ -212,24 +212,27 @@ install_system_updates() {
 }
 
 TEMP_DIRECTORY="$(mktemp -d)"
-TARGET_ARCHITECTURE="$(uname -m)"
-TARGET_OS_RELEASE_ID='ubuntu'
-TARGET_OS_VERSION_ID='26.04'
+TARGET_ARCHITECTURE="$(uname -m)" # for example arm64, x86_64
 TARGET_BITCOIN_TARBALL_OS='linux-gnu'
+TARGET_OS_RELEASE='Ubuntu'
 
+# bump the Ubuntu LTS version on major releases every 2 years or on any minor releases
+TARGET_OS_VERSION='26.04'
+
+# bump the Bitcoin Core version on major releases every 6 months or on any minor releases
 TARGET_BITCOIN_VERSION='31.1'
 
 BITCOIN_DATA_DIRECTORY="${HOME}/.bitcoin"
 BITCOIN_CORE_CONFIG_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoin.conf"
 BITCOIN_CORE_PID_FILE="${BITCOIN_DATA_DIRECTORY}/bitcoind.pid"
 
-TARGET_OS_ERROR_MESSAGE="Must be running Ubuntu ${TARGET_OS_VERSION_ID}."
+TARGET_OS_ERROR_MESSAGE="Must be running ${TARGET_OS_RELEASE} version ${TARGET_OS_VERSION}."
 [ "$(uname -s)" != 'Linux' ] && throw_error "${TARGET_OS_ERROR_MESSAGE}"
 os_release_id="$(grep '^ID=' /etc/os-release | cut -d= -f2)"
 os_version_id="$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | cut -d'"' -f2)"
 
-if [ "${os_release_id}" != "${TARGET_OS_RELEASE_ID}" ] ||
-  [ "${os_version_id}" != "${TARGET_OS_VERSION_ID}" ]; then
+if [ "${os_release_id}" != "${TARGET_OS_RELEASE,,}" ] ||
+  [ "${os_version_id}" != "${TARGET_OS_VERSION}" ]; then
   throw_error "${TARGET_OS_ERROR_MESSAGE}"
 fi
 
